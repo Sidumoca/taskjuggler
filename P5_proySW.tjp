@@ -19,7 +19,7 @@ project pSix "Web Game"  2025-12-15 +5m {
   # the project reports. If not specified, the current day will be
   # used, but this will likely be outside of the project range, so it
   # can't be seen in the reports.
-  now 2026-02-25-13:00
+  now 2026-04-15-12:00
   # The currency for all money values is the US Dollar.
   currency "EUR"
 
@@ -67,6 +67,10 @@ resource dev2 "Samantha Müller" {
 }
 resource dev3 "Peter Green" {
   email "kkk@unizar.es"
+}
+resource dev4 "Siddhartha Montoya"{
+  email "yuhu@unizar.es"
+  workinghours mon-fri 09:00 - 13:00
 }
 
 # Now we specify the work packages. The whole project is described as
@@ -120,6 +124,27 @@ task WMGame "Web & Mobile Game" {
     }
   }
 
+  task tcloudB "Deploy Cloud Backend" {
+    responsible dev2
+    depends WMGame.tback.tBEd
+
+    task tdecideCB "Evaluate and Decide cloud service" {
+      effort 3d
+      allocate dev2
+      journalentry 2026-04-15 "Last minute change" {
+        author dev2
+        alert green
+        summary "All the sugested options had unsolvable problems. I had to search for other services"
+      }
+    }
+
+    task tdeploy "Deploy Backend" {
+      effort 3d
+      allocate dev2
+      depends WMGame.tcloudB.tdecideCB
+    }
+  }
+
   task twebF "Web Front End" {
     purge chargeset
     chargeset wFront
@@ -147,13 +172,37 @@ task WMGame "Web & Mobile Game" {
     }    
   }
 
+task tmobileF "Mobile Front End Construction" {
+    responsible dev4
+    depends WMGame.tback.tBEd
+    task tMGUId "Mobile GUI Design" {
+      effort 5d
+      allocate dev4
+    }
+    task tMFEc "Mobile Front End Construction" {
+      effort 10d
+      allocate dev2, dev4
+      depends WMGame.tmobileF.tMGUId
+    }
+    task tFEt "Mobile Front End Test" {
+      effort 6d
+      allocate dev1
+      depends WMGame.tmobileF.tMFEc
+    }
+}
+
+
+
   task ttest "Acceptance tests" {
       effort 10d
       allocate boss
       allocate dev2
       actual:effort 20d
+      minstart 2026-05-15
       depends WMGame.twebF
       depends WMGame.tback
+      depends WMGame.tmobileF
+      depends WMGame.tcloudB
       }
 
     
@@ -183,6 +232,7 @@ task WMGame "Web & Mobile Game" {
     }
   }
 }
+
 
 # Now the project has been specified completely. Stopping here would
 # result in a valid TaskJuggler file that could be processed and
@@ -263,7 +313,7 @@ taskreport overview "" {
           revenue, chart { ${TaskTip} }
   # For this report we like to have the abbreviated weekday in front
   # of the date. %a is the tag for this.
-  timeformat "%a %Y-%m-%d"
+  timeformat "%aMovil %Y-%m-%d"
   loadunit days
   hideresource @all
   balance cost rev
@@ -316,6 +366,19 @@ taskreport status "" {
     hidetask ~(actual.start > ${now})
   }
 }
+
+  taskreport plan "" {
+    scenarios plan
+    headline "Initial Project Plan"
+    columns bsi { title 'WBS' },
+            name, start, end, effort, cost,
+            revenue, chart { ${TaskTip} }
+    timeformat "%a %Y-%m-%d"
+    loadunit days
+    hideresource @all
+    balance cost rev
+    caption 'All effort values are in man days.'
+  }
 
 # A list of tasks showing the resources assigned to each task.
 taskreport development "" {
